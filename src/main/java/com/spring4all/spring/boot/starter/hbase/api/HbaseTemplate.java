@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,9 @@ public class HbaseTemplate implements HbaseOperations {
 
     private volatile Connection connection;
 
+    public HbaseTemplate(){
+
+    }
     public HbaseTemplate(Configuration configuration) {
         this.setConfiguration(configuration);
         Assert.notNull(configuration, " a valid configuration is required");
@@ -141,6 +145,34 @@ public class HbaseTemplate implements HbaseOperations {
             }
         });
     }
+
+    @Override
+    public <T> List<T> getScan(String tableName, String rowStart, String rowEnd, RowMapper<T> mapper) {
+        return getScan(tableName, rowStart, rowEnd, null, null, mapper);
+    }
+
+    @Override
+    public <T> List<T> getScan(String tableName, String rowStart, String rowEnd, String familyName, String qualifier, RowMapper<T> mapper) {
+        Scan scan = new Scan();
+        scan.setCaching(5000);
+        if (StringUtils.isNotBlank(familyName)) {
+            byte[] family = Bytes.toBytes(familyName);
+            if (StringUtils.isNotBlank(qualifier)) {
+                scan.addColumn(family, Bytes.toBytes(qualifier));
+            }
+            else {
+                scan.addFamily(family);
+            }
+        }
+        FilterList allFilters = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        RowFilter startFilter = new RowFilter(CompareFilter.CompareOp.GREATER_OR_EQUAL, new SubstringComparator(rowStart));
+        RowFilter endFilter = new RowFilter(CompareFilter.CompareOp.LESS_OR_EQUAL, new SubstringComparator(rowEnd));
+        allFilters.addFilter(startFilter);
+        allFilters.addFilter(endFilter);
+        scan.setFilter(allFilters);
+        return this.find(tableName, scan, mapper);
+    }
+
 
     @Override
     public void execute(String tableName, MutatorCallback action) {

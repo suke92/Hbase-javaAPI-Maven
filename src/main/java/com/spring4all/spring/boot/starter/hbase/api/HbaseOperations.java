@@ -104,6 +104,26 @@ public interface HbaseOperations {
      * @return object mapping the target row
      */
     <T> T get(String tableName, final String rowName, final String familyName, final String qualifier, final RowMapper<T> mapper);
+    /**
+     *根据正则判断rowKey结尾满足条件的多行中所有列的值
+     * @param tableName 表名称
+     * @param rowStart 开始的行
+     * @param  rowEnd 结束行
+     * @param mapper 存储结果类
+     * @return  返回所有满足条件的行
+     */
+    <T> List<T> getScan(String tableName, final String rowStart, final String rowEnd, final RowMapper<T> mapper);
+    /**
+     *根据正则判断rowKey结尾满足条件的多行中所有列的值
+     * @param tableName 表名称
+     * @param rowStart 开始的行
+     * @param  rowEnd 结束行
+     * @param  familyName 列族
+     * @param  qualifier 行名称
+     * @param mapper 存储结果类
+     * @return  返回所有满足条件的行
+     */
+    public <T> List<T> getScan(String tableName, String rowStart, String rowEnd, final String familyName, final String qualifier,RowMapper<T> mapper);
 
     /**
      * 执行put update or delete
